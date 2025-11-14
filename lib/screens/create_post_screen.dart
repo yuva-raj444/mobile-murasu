@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-import '../models/news_item.dart';
-import '../utils/app_data.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../utils/storage_service.dart';
+import '../utils/locale_service.dart';
 
 class CreatePostScreen extends StatefulWidget {
   const CreatePostScreen({super.key});
@@ -17,58 +16,80 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   String? _selectedCategory;
-  File? _imageFile;
+
+  @override
+  void initState() {
+    super.initState();
+    LocaleService.addListener(_onLocaleChanged);
+  }
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    LocaleService.removeListener(_onLocaleChanged);
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
-    }
+  void _onLocaleChanged() {
+    setState(() {});
   }
 
   Future<void> _submitPost() async {
     if (_formKey.currentState!.validate()) {
       final village = await StorageService.getVillage();
+      final villageName = village?.village ?? 'Unknown';
 
-      final newPost = NewsItem(
-        id: DateTime.now().millisecondsSinceEpoch,
-        title: _titleController.text,
-        description: _descriptionController.text,
-        fullContent: _descriptionController.text,
-        category: _selectedCategory!,
-        author: 'நீங்கள்',
-        date: DateTime.now().toString().split(' ')[0],
-        time: TimeOfDay.now().format(context),
-        likes: 0,
-        comments: 0,
-        shares: 0,
-        village: village?.village ?? 'Unknown',
-      );
+      // Skip Firestore on web for now
+      if (!kIsWeb) {
+        try {
+          final firestore = FirebaseFirestore.instance;
+          await firestore
+              .collection('villages')
+              .where('nameLower', isEqualTo: villageName.toLowerCase())
+              .limit(1)
+              .get()
+              .then((q) async {
+            String villageDocId;
+            if (q.docs.isNotEmpty) {
+              villageDocId = q.docs.first.id;
+            } else {
+              final doc = await firestore.collection('villages').add({
+                'name': villageName,
+                'nameLower': villageName.toLowerCase(),
+                'createdAt': FieldValue.serverTimestamp(),
+              });
+              villageDocId = doc.id;
+            }
+
+            await firestore
+                .collection('villages')
+                .doc(villageDocId)
+                .collection('news')
+                .add({
+              'title': _titleController.text,
+              'description': _descriptionController.text,
+              'category': _selectedCategory ?? 'news',
+              'author': 'User',
+              'date': DateTime.now().toIso8601String(),
+              'time': TimeOfDay.now().format(context),
+              'createdAt': FieldValue.serverTimestamp(),
+            });
+          });
+        } catch (e) {
+          debugPrint('Firestore error: $e');
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('இடுகை வெற்றிகரமாக வெளியிடப்பட்டது!'),
-            backgroundColor: Color(0xFF10B981),
+          SnackBar(
+            content: Text(L10n.t('submit_success')),
+            backgroundColor: const Color(0xFF10B981),
           ),
         );
-
         await Future.delayed(const Duration(seconds: 1));
-
-        if (mounted) {
-          Navigator.of(context).pop(true);
-        }
+        if (mounted) Navigator.of(context).pop(true);
       }
     }
   }
@@ -81,7 +102,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('புதிய இடுகை'),
+        title: Text(L10n.t('new_post')),
         actions: [
           IconButton(icon: const Icon(Icons.check), onPressed: _submitPost),
         ],
@@ -96,15 +117,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               // Title
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'தலைப்பு *',
-                  hintText: 'செய்தியின் தலைப்பு',
-                  prefixIcon: Icon(Icons.title),
+                decoration: InputDecoration(
+                  labelText: L10n.t('title'),
+                  hintText: L10n.t('title_hint'),
+                  prefixIcon: const Icon(Icons.title),
                 ),
                 maxLength: 100,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'தலைப்பு தேவை';
+                    return L10n.t('title_required');
                   }
                   return null;
                 },
@@ -113,23 +134,23 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
               // Category
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                decoration: const InputDecoration(
-                  labelText: 'வகை *',
-                  prefixIcon: Icon(Icons.category),
+                initialValue: _selectedCategory,
+                decoration: InputDecoration(
+                  labelText: L10n.t('category'),
+                  prefixIcon: const Icon(Icons.category),
                 ),
                 items: [
-                  const DropdownMenuItem(
+                  DropdownMenuItem(
                     value: 'news',
-                    child: Text('செய்திகள்'),
+                    child: Text(L10n.t('news')),
                   ),
-                  const DropdownMenuItem(
+                  DropdownMenuItem(
                     value: 'events',
-                    child: Text('நிகழ்வுகள்'),
+                    child: Text(L10n.t('events')),
                   ),
-                  const DropdownMenuItem(
+                  DropdownMenuItem(
                     value: 'announcements',
-                    child: Text('அறிவிப்புகள்'),
+                    child: Text(L10n.t('announcements')),
                   ),
                 ],
                 onChanged: (value) {
@@ -139,7 +160,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 },
                 validator: (value) {
                   if (value == null) {
-                    return 'வகையை தேர்ந்தெடுக்கவும்';
+                    return L10n.t('select_category');
                   }
                   return null;
                 },
@@ -149,82 +170,27 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               // Description
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'விளக்கம் *',
-                  hintText: 'உங்கள் செய்தியை இங்கே எழுதவும்...',
+                decoration: InputDecoration(
+                  labelText: L10n.t('description'),
+                  hintText: L10n.t('description_hint'),
                   alignLabelWithHint: true,
                 ),
                 maxLines: 8,
                 maxLength: 1000,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'விளக்கம் தேவை';
+                    return L10n.t('description_required');
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
 
-              // Image upload
-              const Text(
-                'படம் (விரும்பினால்)',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-              ),
               const SizedBox(height: 8),
-
-              if (_imageFile != null) ...[
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    _imageFile!,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _imageFile = null;
-                    });
-                  },
-                  icon: const Icon(Icons.delete),
-                  label: const Text('படத்தை நீக்கு'),
-                ),
-              ] else ...[
-                InkWell(
-                  onTap: _pickImage,
-                  child: Container(
-                    height: 150,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: const Color(0xFFE2E8F0),
-                        width: 2,
-                        style: BorderStyle.solid,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.camera_alt,
-                            size: 48,
-                            color: Color(0xFF64748B),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'படத்தைத் தேர்ந்தெடுக்க கிளிக் செய்யவும்',
-                            style: TextStyle(color: Color(0xFF64748B)),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              Text(
+                L10n.t('image_note'),
+                style: TextStyle(color: Color(0xFF64748B)),
+              ),
               const SizedBox(height: 24),
 
               // Submit button
@@ -233,9 +199,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 child: ElevatedButton.icon(
                   onPressed: _submitPost,
                   icon: const Icon(Icons.send),
-                  label: const Text(
-                    'இடுகையை வெளியிடு',
-                    style: TextStyle(fontSize: 16),
+                  label: Text(
+                    L10n.t('publish_post'),
+                    style: const TextStyle(fontSize: 16),
                   ),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),

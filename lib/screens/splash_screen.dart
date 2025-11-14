@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../utils/storage_service.dart';
+import '../utils/locale_service.dart';
 import 'village_selector_screen.dart';
 import 'news_feed_screen.dart';
 
@@ -91,9 +92,9 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'உங்கள் கிராமத்தின் குரல்',
-                style: TextStyle(
+              Text(
+                L10n.t('village_voice'),
+                style: const TextStyle(
                   fontSize: 20,
                   color: Colors.white,
                   fontWeight: FontWeight.w300,

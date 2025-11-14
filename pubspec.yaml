@@ -11,9 +11,13 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.2
   shared_preferences: ^2.2.2
-  intl: ^0.18.1
+  intl: ^0.20.2
   image_picker: ^1.0.7
   share_plus: ^7.2.1
+  firebase_core: ^2.18.0
+  cloud_firestore: ^4.9.0
+  flutter_localizations:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:

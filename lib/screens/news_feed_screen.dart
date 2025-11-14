@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/news_item.dart';
 import '../utils/app_data.dart';
 import '../utils/storage_service.dart';
+import '../utils/locale_service.dart';
 import '../widgets/news_card.dart';
 import 'village_selector_screen.dart';
 import 'news_detail_screen.dart';
@@ -26,6 +27,17 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
     super.initState();
     _loadVillageName();
     _loadNews();
+    LocaleService.addListener(_onLocaleChanged);
+  }
+
+  @override
+  void dispose() {
+    LocaleService.removeListener(_onLocaleChanged);
+    super.dispose();
+  }
+
+  void _onLocaleChanged() {
+    setState(() {});
   }
 
   Future<void> _loadVillageName() async {
@@ -89,13 +101,13 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
-                _buildFilterChip('all', 'அனைத்தும்'),
+                _buildFilterChip('all', L10n.t('all')),
                 const SizedBox(width: 8),
-                _buildFilterChip('news', 'செய்திகள்'),
+                _buildFilterChip('news', L10n.t('news')),
                 const SizedBox(width: 8),
-                _buildFilterChip('events', 'நிகழ்வுகள்'),
+                _buildFilterChip('events', L10n.t('events')),
                 const SizedBox(width: 8),
-                _buildFilterChip('announcements', 'அறிவிப்புகள்'),
+                _buildFilterChip('announcements', L10n.t('announcements')),
               ],
             ),
           ),
@@ -103,52 +115,58 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
           // News Feed
           Expanded(
             child: filteredNews.isEmpty
-                ? const Center(
+                ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.inbox, size: 80, color: Colors.grey),
-                        SizedBox(height: 16),
+                        const Icon(Icons.inbox, size: 80, color: Colors.grey),
+                        const SizedBox(height: 16),
                         Text(
-                          'செய்திகள் இல்லை',
-                          style: TextStyle(fontSize: 18, color: Colors.grey),
+                          L10n.t('no_news'),
+                          style:
+                              const TextStyle(fontSize: 18, color: Colors.grey),
+                        ),
+                        Text(
+                          L10n.t('no_news_desc'),
+                          style: const TextStyle(color: Colors.grey),
                         ),
                       ],
                     ),
                   )
                 : isGridView
-                ? GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
+                    ? GridView.builder(
+                        padding: const EdgeInsets.all(16),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           crossAxisSpacing: 16,
                           mainAxisSpacing: 16,
                           childAspectRatio: 0.75,
                         ),
-                    itemCount: filteredNews.length,
-                    itemBuilder: (context, index) {
-                      return NewsCard(
-                        news: filteredNews[index],
-                        isGridView: true,
-                        onTap: () => _navigateToDetail(filteredNews[index]),
-                      );
-                    },
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: filteredNews.length,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: NewsCard(
-                          news: filteredNews[index],
-                          isGridView: false,
-                          onTap: () => _navigateToDetail(filteredNews[index]),
-                        ),
-                      );
-                    },
-                  ),
+                        itemCount: filteredNews.length,
+                        itemBuilder: (context, index) {
+                          return NewsCard(
+                            news: filteredNews[index],
+                            isGridView: true,
+                            onTap: () => _navigateToDetail(filteredNews[index]),
+                          );
+                        },
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: filteredNews.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: NewsCard(
+                              news: filteredNews[index],
+                              isGridView: false,
+                              onTap: () =>
+                                  _navigateToDetail(filteredNews[index]),
+                            ),
+                          );
+                        },
+                      ),
           ),
         ],
       ),
@@ -160,7 +178,7 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
               break;
             case 1:
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('தேடல் அம்சம் விரைவில் வரும்!')),
+                SnackBar(content: Text(L10n.t('search_coming'))),
               );
               break;
             case 2:
@@ -175,16 +193,18 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
               break;
           }
         },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'முகப்பு'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'தேடல்'),
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle),
-            label: 'புதிது',
+              icon: const Icon(Icons.home), label: L10n.t('home')),
+          BottomNavigationBarItem(
+              icon: const Icon(Icons.search), label: L10n.t('search')),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.add_circle),
+            label: L10n.t('new'),
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'அமைப்புகள்',
+            icon: const Icon(Icons.settings),
+            label: L10n.t('settings'),
           ),
         ],
       ),

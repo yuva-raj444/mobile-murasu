@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../utils/storage_service.dart';
 import 'village_selector_screen.dart';
+import '../utils/locale_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -12,12 +13,28 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
   bool _darkModeEnabled = false;
-  String _currentVillage = 'தேர்ந்தெடுக்கப்படவில்லை';
+  String _currentVillage = '';
+  String _language = '';
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
+    LocaleService.addListener(_onLocaleChanged);
+  }
+
+  @override
+  void dispose() {
+    LocaleService.removeListener(_onLocaleChanged);
+    super.dispose();
+  }
+
+  void _onLocaleChanged() {
+    setState(() {
+      _language = LocaleService.locale.languageCode == 'en'
+          ? L10n.t('english')
+          : L10n.t('tamil');
+    });
   }
 
   Future<void> _loadSettings() async {
@@ -28,7 +45,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _notificationsEnabled = notifications;
       _darkModeEnabled = darkMode;
-      _currentVillage = village?.village ?? 'தேர்ந்தெடுக்கப்படவில்லை';
+      _currentVillage = village?.village ?? L10n.t('not_selected');
+      _language = LocaleService.locale.languageCode == 'en'
+          ? L10n.t('english')
+          : L10n.t('tamil');
     });
   }
 
@@ -42,7 +62,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            value ? 'அறிவிப்புகள் இயக்கப்பட்டன' : 'அறிவிப்புகள் முடக்கப்பட்டன',
+            value
+                ? L10n.t('notifications_enabled')
+                : L10n.t('notifications_disabled'),
           ),
           backgroundColor: const Color(0xFF10B981),
         ),
@@ -58,9 +80,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('இருண்ட பயன்முறை விரைவில் வரும்!'),
-          backgroundColor: Color(0xFFF59E0B),
+        SnackBar(
+          content: Text(L10n.t('dark_mode_coming')),
+          backgroundColor: const Color(0xFFF59E0B),
         ),
       );
     }
@@ -70,28 +92,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('முரசு பற்றி'),
-        content: const SingleChildScrollView(
+        title: Text(L10n.t('about_title')),
+        content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'முரசு - உங்கள் கிராமத்தின் குரல்',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                L10n.t('app_name'),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 16),
-              Text('பதிப்பு: 1.0.0'),
-              Text('வெளியீட்டு தேதி: நவம்பர் 2025'),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
+              Text(L10n.t('version_label')),
+              Text(L10n.t('release_date')),
+              const SizedBox(height: 16),
               Text(
-                'முரசு என்பது உங்கள் கிராம செய்திகள், நிகழ்வுகள் மற்றும் அறிவிப்புகளை பகிர்ந்து கொள்ளும் சமூக வலைதளமாகும்.',
-                style: TextStyle(height: 1.5),
+                L10n.t('app_description'),
+                style: const TextStyle(height: 1.5),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Text(
-                '© 2025 முரசு. அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                L10n.t('copyright'),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
           ),
@@ -99,7 +122,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('சரி'),
+            child: Text(L10n.t('ok')),
           ),
         ],
       ),
@@ -109,15 +132,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('அமைப்புகள்')),
+      appBar: AppBar(title: Text(L10n.t('settings'))),
       body: ListView(
         children: [
           // Account Section
-          const Padding(
-            padding: EdgeInsets.all(16),
+          Padding(
+            padding: const EdgeInsets.all(16),
             child: Text(
-              'கணக்கு',
-              style: TextStyle(
+              L10n.t('account'),
+              style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF64748B),
@@ -135,13 +158,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: const Icon(Icons.person, color: Color(0xFF6366F1)),
             ),
-            title: const Text('சுயவிவரம்'),
-            subtitle: const Text('உங்கள் தகவல்களைத் திருத்தவும்'),
+            title: Text(L10n.t('profile')),
+            subtitle: Text(L10n.t('edit_info')),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('சுயவிவர திருத்தம் விரைவில் வரும்!'),
+                SnackBar(
+                  content: Text(L10n.t('profile_edit_coming')),
                 ),
               );
             },
@@ -156,7 +179,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: const Icon(Icons.location_on, color: Color(0xFF6366F1)),
             ),
-            title: const Text('கிராமம் மாற்று'),
+            title: Text(L10n.t('change_village')),
             subtitle: Text(_currentVillage),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
@@ -171,11 +194,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(height: 32),
 
           // Preferences Section
-          const Padding(
-            padding: EdgeInsets.all(16),
+          Padding(
+            padding: const EdgeInsets.all(16),
             child: Text(
-              'விருப்பங்கள்',
-              style: TextStyle(
+              L10n.t('preferences'),
+              style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF64748B),
@@ -193,7 +216,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: const Icon(Icons.notifications, color: Color(0xFF6366F1)),
             ),
-            title: const Text('அறிவிப்புகள்'),
+            title: Text(L10n.t('notifications')),
             value: _notificationsEnabled,
             onChanged: _toggleNotifications,
           ),
@@ -207,7 +230,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: const Icon(Icons.dark_mode, color: Color(0xFF6366F1)),
             ),
-            title: const Text('இருண்ட பயன்முறை'),
+            title: Text(L10n.t('dark_mode')),
             value: _darkModeEnabled,
             onChanged: _toggleDarkMode,
           ),
@@ -221,13 +244,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: const Icon(Icons.language, color: Color(0xFF6366F1)),
             ),
-            title: const Text('மொழி'),
-            subtitle: const Text('தமிழ்'),
+            title: Text(L10n.t('language')),
+            subtitle: Text(_language),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('மொழி அமைப்புகள் விரைவில் வரும்!'),
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: Text(L10n.t('language')),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ListTile(
+                        title: Text(L10n.t('tamil')),
+                        onTap: () async {
+                          await LocaleService.setLocale(const Locale('ta'));
+                          setState(() => _language = L10n.t('tamil'));
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                      ListTile(
+                        title: Text(L10n.t('english')),
+                        onTap: () async {
+                          await LocaleService.setLocale(const Locale('en'));
+                          setState(() => _language = L10n.t('english'));
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
@@ -236,11 +281,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Divider(height: 32),
 
           // Information Section
-          const Padding(
-            padding: EdgeInsets.all(16),
+          Padding(
+            padding: const EdgeInsets.all(16),
             child: Text(
-              'தகவல்',
-              style: TextStyle(
+              L10n.t('information'),
+              style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF64748B),
@@ -258,8 +303,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: const Icon(Icons.info, color: Color(0xFF6366F1)),
             ),
-            title: const Text('முரசு பற்றி'),
-            subtitle: const Text('பதிப்பு 1.0.0'),
+            title: Text(L10n.t('about')),
+            subtitle: Text(L10n.t('version')),
             trailing: const Icon(Icons.chevron_right),
             onTap: _showAboutDialog,
           ),
@@ -273,11 +318,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: const Icon(Icons.help, color: Color(0xFF6366F1)),
             ),
-            title: const Text('உதவி மற்றும் ஆதரவு'),
+            title: Text(L10n.t('help_support')),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('உதவி பக்கம் விரைவில் வரும்!')),
+                SnackBar(content: Text(L10n.t('help_coming'))),
               );
             },
           ),
@@ -291,12 +336,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: const Icon(Icons.shield, color: Color(0xFF6366F1)),
             ),
-            title: const Text('தனியுரிமை கொள்கை'),
+            title: Text(L10n.t('privacy_policy')),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('தனியுரிமை கொள்கை விரைவில் வரும்!'),
+                SnackBar(
+                  content: Text(L10n.t('privacy_coming')),
                 ),
               );
             },

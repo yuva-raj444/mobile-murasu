@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/news_item.dart';
 import '../utils/storage_service.dart';
 import '../utils/app_data.dart';
+import '../utils/locale_service.dart';
 import 'news_feed_screen.dart';
 
 class VillageSelectorScreen extends StatefulWidget {
@@ -15,15 +18,33 @@ class _VillageSelectorScreenState extends State<VillageSelectorScreen> {
   String? selectedDistrict;
   String? selectedTaluk;
   String? selectedVillage;
+  final _manualController = TextEditingController();
 
   List<String> taluks = [];
   List<String> villages = [];
 
   @override
+  void initState() {
+    super.initState();
+    LocaleService.addListener(_onLocaleChanged);
+  }
+
+  @override
+  void dispose() {
+    _manualController.dispose();
+    LocaleService.removeListener(_onLocaleChanged);
+    super.dispose();
+  }
+
+  void _onLocaleChanged() {
+    setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('கிராமத்தை தேர்ந்தெடுக்கவும்'),
+        title: Text(L10n.t('select_village')),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
@@ -36,25 +57,38 @@ class _VillageSelectorScreenState extends State<VillageSelectorScreen> {
             const SizedBox(height: 32),
             const Icon(Icons.location_on, size: 80, color: Color(0xFF6366F1)),
             const SizedBox(height: 24),
-            const Text(
-              'உங்கள் கிராமத்தை தேர்ந்தெடுக்கவும்',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            Text(
+              L10n.t('select_your_village'),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            const Text(
-              'உங்கள் பகுதியின் செய்திகளைப் பார்க்க கிராமத்தை தேர்வு செய்யவும்',
-              style: TextStyle(fontSize: 16, color: Color(0xFF64748B)),
+            Text(
+              L10n.t('select_village_desc'),
+              style: const TextStyle(fontSize: 16, color: Color(0xFF64748B)),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 48),
+            const SizedBox(height: 24),
+
+            // Manual village entry
+            TextField(
+              controller: _manualController,
+              decoration: InputDecoration(
+                labelText: L10n.t('enter_village'),
+                prefixIcon: const Icon(Icons.edit),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            const Divider(),
+            const SizedBox(height: 24),
 
             // District Dropdown
             DropdownButtonFormField<String>(
-              value: selectedDistrict,
-              decoration: const InputDecoration(
-                labelText: 'மாவட்டம்',
-                prefixIcon: Icon(Icons.place),
+              initialValue: selectedDistrict,
+              decoration: InputDecoration(
+                labelText: L10n.t('district'),
+                prefixIcon: const Icon(Icons.place),
               ),
               items: AppData.districts.keys.map((String district) {
                 return DropdownMenuItem(value: district, child: Text(district));
@@ -73,10 +107,10 @@ class _VillageSelectorScreenState extends State<VillageSelectorScreen> {
 
             // Taluk Dropdown
             DropdownButtonFormField<String>(
-              value: selectedTaluk,
-              decoration: const InputDecoration(
-                labelText: 'வட்டம்',
-                prefixIcon: Icon(Icons.apartment),
+              initialValue: selectedTaluk,
+              decoration: InputDecoration(
+                labelText: L10n.t('taluk'),
+                prefixIcon: const Icon(Icons.apartment),
               ),
               items: taluks.map((String taluk) {
                 return DropdownMenuItem(value: taluk, child: Text(taluk));
@@ -89,8 +123,8 @@ class _VillageSelectorScreenState extends State<VillageSelectorScreen> {
                         selectedVillage = null;
                         villages =
                             value != null && AppData.villages.containsKey(value)
-                            ? AppData.villages[value]!
-                            : [];
+                                ? AppData.villages[value]!
+                                : [];
                       });
                     },
             ),
@@ -98,10 +132,10 @@ class _VillageSelectorScreenState extends State<VillageSelectorScreen> {
 
             // Village Dropdown
             DropdownButtonFormField<String>(
-              value: selectedVillage,
-              decoration: const InputDecoration(
-                labelText: 'கிராமம்',
-                prefixIcon: Icon(Icons.home),
+              initialValue: selectedVillage,
+              decoration: InputDecoration(
+                labelText: L10n.t('village'),
+                prefixIcon: const Icon(Icons.home),
               ),
               items: villages.map((String village) {
                 return DropdownMenuItem(value: village, child: Text(village));
@@ -120,46 +154,96 @@ class _VillageSelectorScreenState extends State<VillageSelectorScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: selectedVillage == null
-                    ? null
-                    : () async {
-                        final villageData = VillageData(
-                          district: selectedDistrict!,
-                          taluk: selectedTaluk!,
-                          village: selectedVillage!,
-                        );
+                onPressed: () async {
+                  final manual = _manualController.text.trim();
 
-                        await StorageService.saveVillage(villageData);
+                  String district = selectedDistrict ?? '';
+                  String taluk = selectedTaluk ?? '';
+                  String villageName = selectedVillage ?? '';
 
-                        if (!context.mounted) return;
+                  if (manual.isNotEmpty) {
+                    villageName = manual;
+                  }
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('கிராமம் தேர்ந்தெடுக்கப்பட்டது!'),
-                            backgroundColor: Color(0xFF10B981),
-                            duration: Duration(seconds: 1),
-                          ),
-                        );
+                  if (villageName.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(L10n.t('enter_village'))),
+                    );
+                    return;
+                  }
 
-                        await Future.delayed(const Duration(seconds: 1));
+                  // Use Firestore to lookup or create village (skip on web for now)
+                  if (!kIsWeb) {
+                    try {
+                      final firestore = FirebaseFirestore.instance;
+                      final lower = villageName.toLowerCase();
+                      final query = await firestore
+                          .collection('villages')
+                          .where('nameLower', isEqualTo: lower)
+                          .limit(1)
+                          .get();
 
-                        if (!context.mounted) return;
+                      if (query.docs.isNotEmpty) {
+                        // exists
+                        final doc = query.docs.first;
+                        final data = doc.data();
+                        district = data['district'] ?? district;
+                        taluk = data['taluk'] ?? taluk;
+                        villageName = data['name'] ?? villageName;
+                      } else {
+                        // create
+                        await firestore.collection('villages').add({
+                          'name': villageName,
+                          'nameLower': lower,
+                          'district': district,
+                          'taluk': taluk,
+                          'createdAt': FieldValue.serverTimestamp(),
+                        });
+                      }
+                    } catch (e) {
+                      // Firestore not configured or error - continue with local storage
+                      debugPrint('Firestore error: $e');
+                    }
+                  }
 
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (_) => const NewsFeedScreen(),
-                          ),
-                        );
-                      },
+                  final villageData = VillageData(
+                    district: district.isNotEmpty ? district : 'Unknown',
+                    taluk: taluk.isNotEmpty ? taluk : 'Unknown',
+                    village: villageName,
+                  );
+
+                  await StorageService.saveVillage(villageData);
+
+                  if (!context.mounted) return;
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(L10n.t('village_selected')),
+                      backgroundColor: const Color(0xFF10B981),
+                      duration: const Duration(seconds: 1),
+                    ),
+                  );
+
+                  await Future.delayed(const Duration(seconds: 1));
+
+                  if (!context.mounted) return;
+
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (_) => const NewsFeedScreen(),
+                    ),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('தொடரவும்', style: TextStyle(fontSize: 18)),
-                    SizedBox(width: 8),
-                    Icon(Icons.arrow_forward),
+                    Text(L10n.t('continue'),
+                        style: const TextStyle(fontSize: 18)),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.arrow_forward),
                   ],
                 ),
               ),
