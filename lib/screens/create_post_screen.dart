@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../utils/storage_service.dart';
 import '../utils/locale_service.dart';
 
 class CreatePostScreen extends StatefulWidget {
-  const CreatePostScreen({super.key});
+  final String villageId;
+  final String villageName;
+
+  const CreatePostScreen({
+    super.key,
+    required this.villageId,
+    required this.villageName,
+  });
 
   @override
   State<CreatePostScreen> createState() => _CreatePostScreenState();
@@ -37,47 +43,38 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   Future<void> _submitPost() async {
     if (_formKey.currentState!.validate()) {
-      final village = await StorageService.getVillage();
-      final villageName = village?.village ?? 'Unknown';
-
       // Skip Firestore on web for now
-      if (!kIsWeb) {
+      if (!kIsWeb && widget.villageId.isNotEmpty) {
         try {
           final firestore = FirebaseFirestore.instance;
+
+          // Add news to the village's news subcollection
           await firestore
               .collection('villages')
-              .where('nameLower', isEqualTo: villageName.toLowerCase())
-              .limit(1)
-              .get()
-              .then((q) async {
-            String villageDocId;
-            if (q.docs.isNotEmpty) {
-              villageDocId = q.docs.first.id;
-            } else {
-              final doc = await firestore.collection('villages').add({
-                'name': villageName,
-                'nameLower': villageName.toLowerCase(),
-                'createdAt': FieldValue.serverTimestamp(),
-              });
-              villageDocId = doc.id;
-            }
-
-            await firestore
-                .collection('villages')
-                .doc(villageDocId)
-                .collection('news')
-                .add({
-              'title': _titleController.text,
-              'description': _descriptionController.text,
-              'category': _selectedCategory ?? 'news',
-              'author': 'User',
-              'date': DateTime.now().toIso8601String(),
-              'time': TimeOfDay.now().format(context),
-              'createdAt': FieldValue.serverTimestamp(),
-            });
+              .doc(widget.villageId)
+              .collection('news')
+              .add({
+            'title': _titleController.text,
+            'description': _descriptionController.text,
+            'fullContent': _descriptionController.text,
+            'category': _selectedCategory ?? 'news',
+            'author': 'User',
+            'timestamp': FieldValue.serverTimestamp(),
+            'likes': 0,
+            'comments': 0,
+            'shares': 0,
           });
         } catch (e) {
           debugPrint('Firestore error: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
         }
       }
 

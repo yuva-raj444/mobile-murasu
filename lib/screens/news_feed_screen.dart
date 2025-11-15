@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/news_item.dart';
 import '../utils/app_data.dart';
-import '../utils/storage_service.dart';
 import '../utils/locale_service.dart';
 import '../widgets/news_card.dart';
 import 'village_selector_screen.dart';
@@ -10,7 +11,14 @@ import 'create_post_screen.dart';
 import 'settings_screen.dart';
 
 class NewsFeedScreen extends StatefulWidget {
-  const NewsFeedScreen({super.key});
+  final String villageId;
+  final String villageName;
+
+  const NewsFeedScreen({
+    super.key,
+    required this.villageId,
+    required this.villageName,
+  });
 
   @override
   State<NewsFeedScreen> createState() => _NewsFeedScreenState();
@@ -19,13 +27,12 @@ class NewsFeedScreen extends StatefulWidget {
 class _NewsFeedScreenState extends State<NewsFeedScreen> {
   String selectedCategory = 'all';
   bool isGridView = true;
-  String villageName = 'முரசு';
   List<NewsItem> newsItems = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _loadVillageName();
     _loadNews();
     LocaleService.addListener(_onLocaleChanged);
   }
@@ -40,19 +47,62 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
     setState(() {});
   }
 
-  Future<void> _loadVillageName() async {
-    final village = await StorageService.getVillage();
-    if (village != null) {
+  Future<void> _loadNews() async {
+    if (kIsWeb || widget.villageId.isEmpty) {
+      // Use sample data for web or if no village ID
       setState(() {
-        villageName = village.village;
+        newsItems = AppData.getSampleNews();
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final snapshot = await firestore
+          .collection('villages')
+          .doc(widget.villageId)
+          .collection('news')
+          .orderBy('timestamp', descending: true)
+          .get();
+
+      final List<NewsItem> loadedNews = [];
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final timestamp =
+            (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
+
+        loadedNews.add(NewsItem(
+          id: doc.id.hashCode, // Convert string ID to int
+          title: data['title'] ?? '',
+          description: data['description'] ?? '',
+          fullContent: data['fullContent'] ?? data['description'] ?? '',
+          category: data['category'] ?? 'general',
+          author: data['author'] ?? 'Anonymous',
+          date: '${timestamp.day}/${timestamp.month}/${timestamp.year}',
+          time:
+              '${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}',
+          likes: data['likes'] ?? 0,
+          comments: data['comments'] ?? 0,
+          shares: data['shares'] ?? 0,
+          village: widget.villageName,
+        ));
+      }
+
+      setState(() {
+        newsItems = loadedNews;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading news: $e');
+      setState(() {
+        newsItems = [];
+        _isLoading = false;
       });
     }
-  }
-
-  void _loadNews() {
-    setState(() {
-      newsItems = AppData.getSampleNews();
-    });
   }
 
   List<NewsItem> get filteredNews {
@@ -76,7 +126,7 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
             );
           },
         ),
-        title: Text(villageName),
+        title: Text(widget.villageName),
         actions: [
           IconButton(
             icon: Icon(isGridView ? Icons.view_list : Icons.grid_view),
@@ -114,59 +164,63 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
 
           // News Feed
           Expanded(
-            child: filteredNews.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.inbox, size: 80, color: Colors.grey),
-                        const SizedBox(height: 16),
-                        Text(
-                          L10n.t('no_news'),
-                          style:
-                              const TextStyle(fontSize: 18, color: Colors.grey),
-                        ),
-                        Text(
-                          L10n.t('no_news_desc'),
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  )
-                : isGridView
-                    ? GridView.builder(
-                        padding: const EdgeInsets.all(16),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: 0.75,
-                        ),
-                        itemCount: filteredNews.length,
-                        itemBuilder: (context, index) {
-                          return NewsCard(
-                            news: filteredNews[index],
-                            isGridView: true,
-                            onTap: () => _navigateToDetail(filteredNews[index]),
-                          );
-                        },
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: filteredNews.length,
-                        itemBuilder: (context, index) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: NewsCard(
-                              news: filteredNews[index],
-                              isGridView: false,
-                              onTap: () =>
-                                  _navigateToDetail(filteredNews[index]),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : filteredNews.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.inbox,
+                                size: 80, color: Colors.grey),
+                            const SizedBox(height: 16),
+                            Text(
+                              L10n.t('no_news'),
+                              style: const TextStyle(
+                                  fontSize: 18, color: Colors.grey),
                             ),
-                          );
-                        },
-                      ),
+                            Text(
+                              L10n.t('no_news_desc'),
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      )
+                    : isGridView
+                        ? GridView.builder(
+                            padding: const EdgeInsets.all(16),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                              childAspectRatio: 0.75,
+                            ),
+                            itemCount: filteredNews.length,
+                            itemBuilder: (context, index) {
+                              return NewsCard(
+                                news: filteredNews[index],
+                                isGridView: true,
+                                onTap: () =>
+                                    _navigateToDetail(filteredNews[index]),
+                              );
+                            },
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: filteredNews.length,
+                            itemBuilder: (context, index) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: NewsCard(
+                                  news: filteredNews[index],
+                                  isGridView: false,
+                                  onTap: () =>
+                                      _navigateToDetail(filteredNews[index]),
+                                ),
+                              );
+                            },
+                          ),
           ),
         ],
       ),
@@ -183,7 +237,12 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
               break;
             case 2:
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const CreatePostScreen()),
+                MaterialPageRoute(
+                  builder: (_) => CreatePostScreen(
+                    villageId: widget.villageId,
+                    villageName: widget.villageName,
+                  ),
+                ),
               );
               break;
             case 3:
@@ -210,9 +269,14 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const CreatePostScreen()));
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => CreatePostScreen(
+                villageId: widget.villageId,
+                villageName: widget.villageName,
+              ),
+            ),
+          );
         },
         child: const Icon(Icons.add),
       ),

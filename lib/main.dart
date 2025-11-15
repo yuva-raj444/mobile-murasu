@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
 import 'utils/theme.dart';
 import 'utils/locale_service.dart';
@@ -9,13 +10,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Skip Firebase initialization on web for now (requires web config)
+  // Initialize Firebase (Android only)
   if (!kIsWeb) {
     try {
-      await Firebase.initializeApp();
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
     } catch (e) {
-      // If Firebase isn't configured, app will continue
-      // but Firestore calls will error at runtime
       debugPrint('Firebase init error: $e');
     }
   }

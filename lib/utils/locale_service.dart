@@ -72,6 +72,10 @@ class L10n {
       'image_note':
           'குறிப்பு: Firestore இலவச திட்டத்தில் படங்கள் ஆதரிக்கப்படவில்லை. உரை இடுகைகள் மட்டுமே சேமிக்கப்படும்.',
 
+      // Village messages
+      'village_found': 'கிராமம் கண்டுபிடிக்கப்பட்டது',
+      'village_created': 'புதிய கிராமம் உருவாக்கப்பட்டது',
+
       // Settings
       'settings': 'அமைப்புகள்',
       'account': 'கணக்கு',
@@ -155,6 +159,10 @@ class L10n {
       'publish_post': 'Publish Post',
       'image_note':
           'Note: Images are not supported on Firestore free plan. Only text posts are saved.',
+
+      // Village messages
+      'village_found': 'Village found',
+      'village_created': 'New village created',
 
       // Settings
       'settings': 'Settings',

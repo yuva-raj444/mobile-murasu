@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../utils/storage_service.dart';
 import '../utils/locale_service.dart';
 import 'village_selector_screen.dart';
-import 'news_feed_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -38,19 +36,10 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-    final village = await StorageService.getVillage();
-
-    if (!mounted) return;
-
-    if (village != null) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const NewsFeedScreen()),
-      );
-    } else {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const VillageSelectorScreen()),
-      );
-    }
+    // Always go to village selector - user must enter village name
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const VillageSelectorScreen()),
+    );
   }
 
   @override
@@ -76,10 +65,21 @@ class _SplashScreenState extends State<SplashScreen>
             children: [
               ScaleTransition(
                 scale: _scaleAnimation,
-                child: const Icon(
-                  Icons.campaign,
-                  size: 100,
-                  color: Colors.white,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.asset(
+                    'assets/images/mobile murasu.png',
+                    width: 120,
+                    height: 120,
+                    errorBuilder: (context, error, stackTrace) {
+                      // Fallback to icon if image not found
+                      return const Icon(
+                        Icons.campaign,
+                        size: 100,
+                        color: Colors.white,
+                      );
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
