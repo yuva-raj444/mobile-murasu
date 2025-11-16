@@ -43,4 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firebase credentials - DO NOT COMMIT
+android/app/google-services.json
 lib/firebase_options.dart
+firebase-debug.log
+.firebase/
