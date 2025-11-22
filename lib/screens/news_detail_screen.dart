@@ -108,9 +108,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            news.isLiked
-                ? L10n.t('liked')
-                : L10n.t('unliked'),
+            news.isLiked ? L10n.t('liked') : L10n.t('unliked'),
           ),
           backgroundColor: const Color(0xFF10B981),
           duration: const Duration(seconds: 1),
@@ -144,10 +142,10 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
               height: 250,
               width: double.infinity,
               decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFFF6B85C), Color(0xFFFFC876)],
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFF6B85C), Color(0xFFFFC876)],
                 ),
               ),
               child: const Center(
@@ -166,7 +164,7 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                       horizontal: 12,
                       vertical: 6,
                     ),
-                  decoration: BoxDecoration(
+                    decoration: BoxDecoration(
                       color: const Color(0xFFF6B85C).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
