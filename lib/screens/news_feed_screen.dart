@@ -48,8 +48,8 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
   }
 
   Future<void> _loadNews() async {
-    if (kIsWeb || widget.villageId.isEmpty) {
-      // Use sample data for web or if no village ID
+    if (widget.villageId.isEmpty) {
+      // Use sample data if no village ID
       setState(() {
         newsItems = AppData.getSampleNews();
       });
@@ -294,13 +294,13 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
         });
       },
       backgroundColor: Colors.white,
-      selectedColor: const Color(0xFF6366F1),
+      selectedColor: const Color(0xFFF6B85C),
       labelStyle: TextStyle(
         color: isSelected ? Colors.white : const Color(0xFF64748B),
         fontWeight: FontWeight.w500,
       ),
       side: BorderSide(
-        color: isSelected ? const Color(0xFF6366F1) : const Color(0xFFE2E8F0),
+        color: isSelected ? const Color(0xFFF6B85C) : const Color(0xFFE2E8F0),
         width: 2,
       ),
     );
@@ -309,7 +309,12 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
   void _navigateToDetail(NewsItem news) async {
     final result = await Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (_) => NewsDetailScreen(news: news)));
+    ).push(MaterialPageRoute(
+      builder: (_) => NewsDetailScreen(
+        news: news,
+        villageId: widget.villageId,
+      ),
+    ));
 
     if (result == true) {
       _loadNews();

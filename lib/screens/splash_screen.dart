@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../utils/locale_service.dart';
+import '../utils/storage_service.dart';
 import 'village_selector_screen.dart';
+import 'news_feed_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -36,10 +38,25 @@ class _SplashScreenState extends State<SplashScreen>
 
     if (!mounted) return;
 
-    // Always go to village selector - user must enter village name
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const VillageSelectorScreen()),
-    );
+    // Check if user has already selected a village
+    final savedVillage = await StorageService.getVillage();
+
+    if (savedVillage != null) {
+      // Go directly to news feed with saved village
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => NewsFeedScreen(
+            villageId: savedVillage.id,
+            villageName: savedVillage.name,
+          ),
+        ),
+      );
+    } else {
+      // Go to village selector if no saved village
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const VillageSelectorScreen()),
+      );
+    }
   }
 
   @override
@@ -56,7 +73,10 @@ class _SplashScreenState extends State<SplashScreen>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+            colors: [
+              Color.fromARGB(255, 241, 182, 99),
+              Color.fromARGB(255, 246, 184, 92)
+            ],
           ),
         ),
         child: Center(

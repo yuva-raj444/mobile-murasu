@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color primaryColor = Color(0xFF6366F1);
-  static const Color primaryDark = Color(0xFF4F46E5);
-  static const Color secondaryColor = Color(0xFF8B5CF6);
+  static const Color primaryColor = Color(0xFFF6B85C);
+  static const Color primaryDark = Color(0xFFE5A84A);
+  static const Color secondaryColor = Color(0xFFFFC876);
   static const Color background = Color(0xFFF8FAFC);
   static const Color surface = Color(0xFFFFFFFF);
   static const Color textPrimary = Color(0xFF1E293B);
@@ -25,17 +25,17 @@ class AppTheme {
         surface: AppColors.surface,
         error: AppColors.danger,
       ),
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.primaryColor,
         foregroundColor: Colors.white,
         elevation: 4,
         centerTitle: true,
-        titleTextStyle: const TextStyle(
+        titleTextStyle: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

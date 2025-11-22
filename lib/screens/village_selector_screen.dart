@@ -49,7 +49,7 @@ class _VillageSelectorScreenState extends State<VillageSelectorScreen> {
         child: Column(
           children: [
             const SizedBox(height: 32),
-            const Icon(Icons.location_on, size: 80, color: Color(0xFF6366F1)),
+            const Icon(Icons.location_on, size: 80, color: Color(0xFFF6B85C)),
             const SizedBox(height: 24),
             Text(
               L10n.t('select_your_village'),
@@ -136,9 +136,10 @@ class _VillageSelectorScreenState extends State<VillageSelectorScreen> {
     String taluk = '';
     String villageId = '';
 
-    // Use Firestore to lookup or create village (skip on web for now)
-    if (!kIsWeb) {
+    // Use Firestore to lookup or create village
+    if (true) {
       try {
+        debugPrint('Checking Firestore for village: $villageName');
         final firestore = FirebaseFirestore.instance;
         final lower = villageName.toLowerCase();
         final query = await firestore
@@ -147,6 +148,8 @@ class _VillageSelectorScreenState extends State<VillageSelectorScreen> {
             .limit(1)
             .get();
 
+        debugPrint('Query completed. Found ${query.docs.length} documents');
+
         if (query.docs.isNotEmpty) {
           // Village exists - get data
           final doc = query.docs.first;
@@ -154,6 +157,8 @@ class _VillageSelectorScreenState extends State<VillageSelectorScreen> {
           villageId = doc.id;
           district = data['district'] ?? '';
           taluk = data['taluk'] ?? '';
+
+          debugPrint('✅ Village found! ID: $villageId');
 
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -164,6 +169,7 @@ class _VillageSelectorScreenState extends State<VillageSelectorScreen> {
           );
         } else {
           // Create new village
+          debugPrint('Creating new village in Firestore...');
           final docRef = await firestore.collection('villages').add({
             'name': villageName,
             'nameLower': lower,
@@ -172,6 +178,8 @@ class _VillageSelectorScreenState extends State<VillageSelectorScreen> {
             'createdAt': FieldValue.serverTimestamp(),
           });
           villageId = docRef.id;
+
+          debugPrint('✅ Village created! ID: $villageId');
 
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -183,12 +191,14 @@ class _VillageSelectorScreenState extends State<VillageSelectorScreen> {
         }
       } catch (e) {
         // Firestore not configured or error - continue with local storage
-        debugPrint('Firestore error: $e');
+        debugPrint('❌ Firestore error: $e');
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text(
+                'Firestore Error: ${e.toString().contains('permission') ? 'Permission denied! Check Firebase Console.' : e.toString()}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
         setState(() {
@@ -199,6 +209,8 @@ class _VillageSelectorScreenState extends State<VillageSelectorScreen> {
     }
 
     final villageData = VillageData(
+      id: villageId,
+      name: villageName,
       district: district.isNotEmpty ? district : 'Unknown',
       taluk: taluk.isNotEmpty ? taluk : 'Unknown',
       village: villageName,

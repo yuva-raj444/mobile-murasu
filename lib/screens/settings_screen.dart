@@ -153,10 +153,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withOpacity(0.1),
+                color: const Color(0xFFF6B85C).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.person, color: Color(0xFF6366F1)),
+              child: const Icon(Icons.person, color: Color(0xFFF6B85C)),
             ),
             title: Text(L10n.t('profile')),
             subtitle: Text(L10n.t('edit_info')),
@@ -174,10 +174,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withOpacity(0.1),
+                color: const Color(0xFFF6B85C).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.location_on, color: Color(0xFF6366F1)),
+              child: const Icon(Icons.location_on, color: Color(0xFFF6B85C)),
             ),
             title: Text(L10n.t('change_village')),
             subtitle: Text(_currentVillage),
@@ -211,10 +211,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             secondary: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withOpacity(0.1),
+                color: const Color(0xFFF6B85C).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.notifications, color: Color(0xFF6366F1)),
+              child: const Icon(Icons.notifications, color: Color(0xFFF6B85C)),
             ),
             title: Text(L10n.t('notifications')),
             value: _notificationsEnabled,
@@ -225,10 +225,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             secondary: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withOpacity(0.1),
+                color: const Color(0xFFF6B85C).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.dark_mode, color: Color(0xFF6366F1)),
+              child: const Icon(Icons.dark_mode, color: Color(0xFFF6B85C)),
             ),
             title: Text(L10n.t('dark_mode')),
             value: _darkModeEnabled,
@@ -239,10 +239,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withOpacity(0.1),
+                color: const Color(0xFFF6B85C).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.language, color: Color(0xFF6366F1)),
+              child: const Icon(Icons.language, color: Color(0xFFF6B85C)),
             ),
             title: Text(L10n.t('language')),
             subtitle: Text(_language),
@@ -298,10 +298,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withOpacity(0.1),
+                color: const Color(0xFFF6B85C).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.info, color: Color(0xFF6366F1)),
+              child: const Icon(Icons.info, color: Color(0xFFF6B85C)),
             ),
             title: Text(L10n.t('about')),
             subtitle: Text(L10n.t('version')),
@@ -313,10 +313,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withOpacity(0.1),
+                color: const Color(0xFFF6B85C).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.help, color: Color(0xFF6366F1)),
+              child: const Icon(Icons.help, color: Color(0xFFF6B85C)),
             ),
             title: Text(L10n.t('help_support')),
             trailing: const Icon(Icons.chevron_right),
@@ -331,10 +331,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             leading: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF6366F1).withOpacity(0.1),
+                color: const Color(0xFFF6B85C).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.shield, color: Color(0xFF6366F1)),
+              child: const Icon(Icons.shield, color: Color(0xFFF6B85C)),
             ),
             title: Text(L10n.t('privacy_policy')),
             trailing: const Icon(Icons.chevron_right),

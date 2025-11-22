@@ -43,13 +43,17 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   Future<void> _submitPost() async {
     if (_formKey.currentState!.validate()) {
-      // Skip Firestore on web for now
-      if (!kIsWeb && widget.villageId.isNotEmpty) {
+      // Save to Firestore
+      if (widget.villageId.isNotEmpty) {
         try {
+          debugPrint('Attempting to save post to Firestore...');
+          debugPrint('Village ID: ${widget.villageId}');
+          debugPrint('Village Name: ${widget.villageName}');
+
           final firestore = FirebaseFirestore.instance;
 
           // Add news to the village's news subcollection
-          await firestore
+          final docRef = await firestore
               .collection('villages')
               .doc(widget.villageId)
               .collection('news')
@@ -64,18 +68,24 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             'comments': 0,
             'shares': 0,
           });
+
+          debugPrint('✅ Post saved successfully! Doc ID: ${docRef.id}');
         } catch (e) {
-          debugPrint('Firestore error: $e');
+          debugPrint('❌ Firestore error: $e');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Error: $e'),
+                content: Text(
+                    'Failed to publish: ${e.toString().contains('permission') ? 'Permission denied. Check Firestore rules.' : e.toString()}'),
                 backgroundColor: Colors.red,
+                duration: const Duration(seconds: 5),
               ),
             );
           }
           return;
         }
+      } else {
+        debugPrint('⚠️ No village ID - cannot save to Firestore');
       }
 
       if (mounted) {
@@ -180,13 +190,6 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   }
                   return null;
                 },
-              ),
-              const SizedBox(height: 16),
-
-              const SizedBox(height: 8),
-              Text(
-                L10n.t('image_note'),
-                style: TextStyle(color: Color(0xFF64748B)),
               ),
               const SizedBox(height: 24),
 

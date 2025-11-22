@@ -69,8 +69,6 @@ class L10n {
       'title_required': 'தலைப்பு தேவை',
       'description_required': 'விளக்கம் தேவை',
       'publish_post': 'இடுகையை வெளியிடு',
-      'image_note':
-          'குறிப்பு: Firestore இலவச திட்டத்தில் படங்கள் ஆதரிக்கப்படவில்லை. உரை இடுகைகள் மட்டுமே சேமிக்கப்படும்.',
 
       // Village messages
       'village_found': 'கிராமம் கண்டுபிடிக்கப்பட்டது',
@@ -114,6 +112,10 @@ class L10n {
       // News Detail
       'read_more': 'மேலும் படிக்க',
       'share': 'பகிர்',
+      'liked': 'விருப்பம் சேர்க்கப்பட்டது',
+      'unliked': 'விருப்பம் நீக்கப்பட்டது',
+      'comment_coming': 'கருத்து அம்சம் விரைவில் வரும்!',
+      'related_news': 'தொடர்புடைய செய்திகள்',
 
       // Splash
       'village_voice': 'உங்கள் கிராமத்தின் குரல்',
@@ -157,8 +159,6 @@ class L10n {
       'title_required': 'Title is required',
       'description_required': 'Description is required',
       'publish_post': 'Publish Post',
-      'image_note':
-          'Note: Images are not supported on Firestore free plan. Only text posts are saved.',
 
       // Village messages
       'village_found': 'Village found',
@@ -202,6 +202,10 @@ class L10n {
       // News Detail
       'read_more': 'Read More',
       'share': 'Share',
+      'liked': 'Added to favorites',
+      'unliked': 'Removed from favorites',
+      'comment_coming': 'Comment feature coming soon!',
+      'related_news': 'Related News',
 
       // Splash
       'village_voice': 'Your Village Voice',

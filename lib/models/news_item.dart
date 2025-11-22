@@ -31,25 +31,33 @@ class NewsItem {
 }
 
 class VillageData {
+  final String id;
+  final String name;
   final String district;
   final String taluk;
   final String village;
 
   VillageData({
+    required this.id,
+    required this.name,
     required this.district,
     required this.taluk,
     required this.village,
   });
 
   Map<String, dynamic> toJson() => {
-    'district': district,
-    'taluk': taluk,
-    'village': village,
-  };
+        'id': id,
+        'name': name,
+        'district': district,
+        'taluk': taluk,
+        'village': village,
+      };
 
   factory VillageData.fromJson(Map<String, dynamic> json) => VillageData(
-    district: json['district'],
-    taluk: json['taluk'],
-    village: json['village'],
-  );
+        id: json['id'] ?? '',
+        name: json['name'] ?? json['village'] ?? '',
+        district: json['district'] ?? '',
+        taluk: json['taluk'] ?? '',
+        village: json['village'] ?? '',
+      );
 }

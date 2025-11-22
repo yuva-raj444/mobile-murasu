@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/news_item.dart';
 import '../utils/app_data.dart';
 import '../utils/storage_service.dart';
+import '../utils/locale_service.dart';
 import '../widgets/news_card.dart';
 
 class NewsDetailScreen extends StatefulWidget {
   final NewsItem news;
+  final String villageId;
 
-  const NewsDetailScreen({super.key, required this.news});
+  const NewsDetailScreen(
+      {super.key, required this.news, required this.villageId});
 
   @override
   State<NewsDetailScreen> createState() => _NewsDetailScreenState();
@@ -16,12 +20,15 @@ class NewsDetailScreen extends StatefulWidget {
 
 class _NewsDetailScreenState extends State<NewsDetailScreen> {
   late NewsItem news;
+  List<NewsItem> relatedNews = [];
+  bool _isLoadingRelated = false;
 
   @override
   void initState() {
     super.initState();
     news = widget.news;
     _loadLikedStatus();
+    _loadRelatedNews();
   }
 
   Future<void> _loadLikedStatus() async {
@@ -29,6 +36,65 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
     setState(() {
       news.isLiked = isLiked;
     });
+  }
+
+  Future<void> _loadRelatedNews() async {
+    if (widget.villageId.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingRelated = true;
+    });
+
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final snapshot = await firestore
+          .collection('villages')
+          .doc(widget.villageId)
+          .collection('news')
+          .orderBy('timestamp', descending: true)
+          .limit(4) // Get 4 to exclude current one
+          .get();
+
+      final List<NewsItem> loadedNews = [];
+      for (var doc in snapshot.docs) {
+        // Skip the current news item
+        if (doc.id.hashCode == news.id) continue;
+
+        final data = doc.data();
+        final timestamp =
+            (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
+
+        loadedNews.add(NewsItem(
+          id: doc.id.hashCode,
+          title: data['title'] ?? '',
+          description: data['description'] ?? '',
+          fullContent: data['fullContent'] ?? data['description'] ?? '',
+          category: data['category'] ?? 'general',
+          author: data['author'] ?? 'Anonymous',
+          date: '${timestamp.day}/${timestamp.month}/${timestamp.year}',
+          time:
+              '${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}',
+          likes: data['likes'] ?? 0,
+          comments: data['comments'] ?? 0,
+          shares: data['shares'] ?? 0,
+          village: news.village,
+        ));
+
+        if (loadedNews.length >= 3) break; // Only need 3 related items
+      }
+
+      setState(() {
+        relatedNews = loadedNews;
+        _isLoadingRelated = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading related news: $e');
+      setState(() {
+        _isLoadingRelated = false;
+      });
+    }
   }
 
   Future<void> _toggleLike() async {
@@ -43,8 +109,8 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
         SnackBar(
           content: Text(
             news.isLiked
-                ? 'விருப்பம் சேர்க்கப்பட்டது'
-                : 'விருப்பம் நீக்கப்பட்டது',
+                ? L10n.t('liked')
+                : L10n.t('unliked'),
           ),
           backgroundColor: const Color(0xFF10B981),
           duration: const Duration(seconds: 1),
@@ -62,11 +128,6 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final relatedNews = AppData.getSampleNews()
-        .where((item) => item.category == news.category && item.id != news.id)
-        .take(3)
-        .toList();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('செய்தி விவரம்'),
@@ -83,10 +144,10 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
               height: 250,
               width: double.infinity,
               decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFF6B85C), Color(0xFFFFC876)],
                 ),
               ),
               child: const Center(
@@ -105,16 +166,16 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                       horizontal: 12,
                       vertical: 6,
                     ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF6366F1).withOpacity(0.1),
+                  decoration: BoxDecoration(
+                      color: const Color(0xFFF6B85C).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      AppData.categoryLabels[news.category] ?? '',
+                      AppData.categoryLabels[widget.news.category] ?? '',
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF6366F1),
+                        color: Color(0xFFF6B85C),
                       ),
                     ),
                   ),
@@ -223,8 +284,8 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                         child: OutlinedButton.icon(
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('கருத்து அம்சம் விரைவில் வரும்!'),
+                              SnackBar(
+                                content: Text(L10n.t('comment_coming')),
                               ),
                             );
                           },
@@ -246,9 +307,9 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
 
                   // Related news
                   if (relatedNews.isNotEmpty) ...[
-                    const Text(
-                      'தொடர்புடைய செய்திகள்',
-                      style: TextStyle(
+                    Text(
+                      L10n.t('related_news'),
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -263,7 +324,10 @@ class _NewsDetailScreenState extends State<NewsDetailScreen> {
                           onTap: () {
                             Navigator.of(context).pushReplacement(
                               MaterialPageRoute(
-                                builder: (_) => NewsDetailScreen(news: item),
+                                builder: (_) => NewsDetailScreen(
+                                  news: item,
+                                  villageId: widget.villageId,
+                                ),
                               ),
                             );
                           },
